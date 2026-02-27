@@ -8,51 +8,69 @@ Short description.
 
 - Core value proposition.
 - Key feature.
-- Another key feature.
+template-go
 
-## Getting started
+This repository is a reusable Go project template with a small example app and a library package.
 
-### Prerequisites
+Quick start
 
-- Language runtime (TBD)
-- Package manager (TBD)
-
-### Install
-
-```sh
-# Example install command
-# package-manager install
+```bash
+make build
+./bin/app
 ```
 
-### Usage
+Or run directly:
 
-```sh
-# Example usage command
-# package-manager run start
+```bash
+go run ./cmd/app
 ```
 
-## Configuration
+Project layout
 
-Describe environment variables and configuration files here.
+- `cmd/app` — application entrypoint
+- `pkg/` — reusable packages for import by apps
+- `examples/` — usage examples
+- `scripts/` — helper scripts (hooks installer)
 
-## Documentation
+CI & tooling
 
-- API docs: docs/api (TBD)
-- Guides: docs/guides (TBD)
-- Architecture: docs/architecture (TBD)
+- GitHub Actions workflow: [/.github/workflows/go-ci.yml](.github/workflows/go-ci.yml)
+- Linter config: `./.golangci.yml`
+- Use `make lint` to run `golangci-lint` (install `golangci-lint` first)
 
-## Contributing
+Hooks
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development workflow and standards.
+Run the hook installer for your platform:
 
-## Code of Conduct
+- Unix/macOS:
 
-This project follows the [Code of Conduct](CODE_OF_CONDUCT.md).
+	```bash
+	sh scripts/install-hooks.sh
+	```
 
-## Security
+- Windows (PowerShell):
 
-Report security issues as described in [SECURITY.md](SECURITY.md).
+	```powershell
+	.\scripts\install-hooks.ps1
+	```
 
-## License
 
-Licensed under the MIT License. See [LICENSE](LICENSE).
+CI and Git Hooks
+
+- This project includes a GitHub Actions workflow at `.github/workflows/go-ci.yml` that runs `gofmt` check, `go vet`, `go test`, and builds the project on push and PR.
+- To enable the included local git hooks run the installer for your platform:
+
+	- Unix/macOS:
+
+		```bash
+		sh scripts/install-hooks.sh
+		```
+
+	- Windows (PowerShell):
+
+		```powershell
+		.\scripts\install-hooks.ps1
+		```
+
+	The installer sets `core.hooksPath` to the included `.githooks` directory. The pre-commit hook will check formatting and run `go vet` and `go test`.
+"# go-zip" 
