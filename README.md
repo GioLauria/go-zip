@@ -75,3 +75,7 @@ MIT — see `LICENSE`.
 Acknowledgements
 
 Go Zip uses `zstd` for the stronger compression backend (optional via `-method zstd`). The project uses the implementation from `github.com/klauspost/compress/zstd` — many thanks to @klauspost for that excellent work.
+
+Contributing
+
+If you'd like to contribute, see `CONTRIBUTING.md` for development setup, tests, and pull request guidelines. Install local hooks with `sh scripts/install-hooks.sh` or `./scripts/install-hooks.ps1` on Windows to enable pre-commit checks.
