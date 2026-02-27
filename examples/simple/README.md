@@ -9,7 +9,7 @@ go run ./cmd/app
 Use the library in code:
 
 ```go
-import "github.com/giova/template-go/pkg/greetings"
+import "github.com/GioLauria/go-zip/pkg/greetings"
 
 fmt.Println(greetings.Hello("Giova"))
 ```

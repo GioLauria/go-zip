@@ -2,7 +2,7 @@
 
 Thanks for your interest in contributing!
 
-> Template note: update placeholders (project name, language, tooling) before publishing.
+> Note: please review project name, language, and tooling placeholders if present before publishing.
 
 ## Ways to contribute
 

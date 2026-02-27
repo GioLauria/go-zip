@@ -1,3 +1,3 @@
-module github.com/giova/template-go
+module github.com/GioLauria/go-zip
 
 go 1.20
