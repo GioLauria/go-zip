@@ -1,76 +1,61 @@
-# Project Name
+```markdown
+# Go Zip
 
-Short description.
+Go Zip is a small, practical command-line tool and library for compressing single files with strong, easy-to-use defaults. The project ships a simple CLI at `cmd/compress` that produces compressed packages with the extension `.goz`.
 
-> Template note: replace placeholders before publishing.
+Key points
 
-## Highlights
-
-- Core value proposition.
-- Key feature.
-template-go
-
-This repository is a reusable Go project template with a small example app and a library package.
+- Purpose: fast, straightforward file compression for single files.
+- CLI: `cmd/compress` — compress an input file to `<input>.goz` by default.
+- Default extension: `.goz` (customizable with `-out` or `-ext`).
+- Notes: gzip is the current default implementation; zstd is recommended for higher compression and can be added later.
 
 Quick start
 
-```bash
-make build
-./bin/app
+Build the CLI:
+
+```powershell
+go build -o compress.exe ./cmd/compress
 ```
 
-Or run directly:
+Compress a file (best gzip compression):
 
-```bash
-go run ./cmd/app
+```powershell
+./compress.exe -level 9 path\to\file.ext
 ```
+
+Specify output path or extension:
+
+```powershell
+./compress.exe -out archive.goz path\to\file.ext
+./compress.exe -ext .goz path\to\file.ext
+```
+
+What `cmd/compress` does
+
+- Reads a single input file and writes a compressed package.
+- By default writes `input + .goz` and stores the original filename in the gzip header.
+- Prints original and compressed sizes and the percent reduction.
+
+Why `.goz`?
+
+`.goz` is a lightweight, project-specific extension that avoids colliding with system-used extensions while being easy to identify as a Go Zip package. If/when zstd is adopted, you may choose `.goz` to remain consistent or use `.gozst` / `.gzst` if you prefer an explicit zstd marker.
+
+Roadmap / Recommendations
+
+- Add optional `zstd` backend (e.g. `github.com/klauspost/compress/zstd`) for higher compression ratios — often much better than gzip for many inputs.
+- Add multi-file packaging or archive+compress mode later if needed.
 
 Project layout
 
-- `cmd/app` — application entrypoint
-- `pkg/` — reusable packages for import by apps
+- `cmd/compress` — compressor CLI
+- `pkg/` — library code and helpers
 - `examples/` — usage examples
-- `scripts/` — helper scripts (hooks installer)
 
-CI & tooling
+Contributing
 
-- GitHub Actions workflow: [/.github/workflows/go-ci.yml](.github/workflows/go-ci.yml)
-- Linter config: `./.golangci.yml`
-- Use `make lint` to run `golangci-lint` (install `golangci-lint` first)
+See the repository's tooling and CI configs for linting and tests. Use the hook installer in `scripts/` to enable local git hooks.
 
-Hooks
-
-Run the hook installer for your platform:
-
-- Unix/macOS:
-
-	```bash
-	sh scripts/install-hooks.sh
-	```
-
-- Windows (PowerShell):
-
-	```powershell
-	.\scripts\install-hooks.ps1
-	```
-
-
-CI and Git Hooks
-
-- This project includes a GitHub Actions workflow at `.github/workflows/go-ci.yml` that runs `gofmt` check, `go vet`, `go test`, and builds the project on push and PR.
+``` 
+```
 - To enable the included local git hooks run the installer for your platform:
-
-	- Unix/macOS:
-
-		```bash
-		sh scripts/install-hooks.sh
-		```
-
-	- Windows (PowerShell):
-
-		```powershell
-		.\scripts\install-hooks.ps1
-		```
-
-	The installer sets `core.hooksPath` to the included `.githooks` directory. The pre-commit hook will check formatting and run `go vet` and `go test`.
-"# go-zip" 
