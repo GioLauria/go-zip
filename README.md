@@ -50,6 +50,7 @@ Flags
 - `-D` : decompress archive into directory (decompress mode)
 - `-out` : explicitly set output file (compress) or output directory (decompress)
 - `-level` : gzip compression level (1-9)
+ - `-method` : compression method (`gzip` or `zstd`). Use `zstd` for stronger compression.
 
 Notes
 

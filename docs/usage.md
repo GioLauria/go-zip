@@ -37,6 +37,8 @@ Flags
 - `-D` : decompress mode
 - `-out` : explicitly set output file (for compress) or output directory (for decompress)
 - `-level` : gzip compression level (1-9), higher is slower and smaller
+ - `-level` : gzip compression level (1-9), higher is slower and smaller
+ - `-method` : compression method to use (`gzip` or `zstd`). `zstd` offers stronger compression; default is `gzip`.
 
 When using `-out` for compression the CLI will normalize the filename to end with `.goz`.
 

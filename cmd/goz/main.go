@@ -8,11 +8,13 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	zstd "github.com/klauspost/compress/zstd"
 )
 
 func main() {
 	compress := flag.Bool("C", false, "Compress a single file")
 	decompress := flag.Bool("D", false, "Decompress a .goz archive to a folder")
+	method := flag.String("method", "gzip", "compression method: gzip or zstd")
 	level := flag.Int("level", gzip.BestCompression, "gzip compression level (1-9). Higher = smaller, slower")
 	out := flag.String("out", "", "output file or directory (optional)")
 	flag.Parse()
@@ -37,7 +39,7 @@ func main() {
 		if !strings.HasSuffix(strings.ToLower(outPath), ".goz") {
 			outPath = outPath + ".goz"
 		}
-		if err := compressFile(src, outPath, *level); err != nil {
+		if err := compressFile(src, outPath, *level, *method); err != nil {
 			fmt.Fprintln(os.Stderr, "compress error:", err)
 			os.Exit(1)
 		}
@@ -65,7 +67,7 @@ func main() {
 				os.Exit(2)
 			}
 		}
-		if err := decompressFile(archive, outDir); err != nil {
+		if err := decompressFile(archive, outDir, *method); err != nil {
 			fmt.Fprintln(os.Stderr, "decompress error:", err)
 			os.Exit(1)
 		}
@@ -74,7 +76,7 @@ func main() {
 	}
 }
 
-func compressFile(src, dest string, level int) error {
+func compressFile(src, dest string, level int, method string) error {
 	in, err := os.Open(src)
 	if err != nil {
 		return err
@@ -90,36 +92,73 @@ func compressFile(src, dest string, level int) error {
 	}
 	defer out.Close()
 
-	gw, err := gzip.NewWriterLevel(out, level)
-	if err != nil {
-		return err
-	}
-	gw.Name = filepath.Base(src)
+	switch strings.ToLower(method) {
+	case "gzip":
+		gw, err := gzip.NewWriterLevel(out, level)
+		if err != nil {
+			return err
+		}
+		gw.Name = filepath.Base(src)
 
-	if _, err := io.Copy(gw, in); err != nil {
-		gw.Close()
-		return err
-	}
-	if err := gw.Close(); err != nil {
-		return err
+		if _, err := io.Copy(gw, in); err != nil {
+			gw.Close()
+			return err
+		}
+		if err := gw.Close(); err != nil {
+			return err
+		}
+	case "zstd":
+		// use strong zstd compression
+		zw, err := zstd.NewWriter(out, zstd.WithEncoderLevel(zstd.SpeedBestCompression))
+		if err != nil {
+			return err
+		}
+		if _, err := io.Copy(zw, in); err != nil {
+			zw.Close()
+			return err
+		}
+		if err := zw.Close(); err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("unknown compression method: %s", method)
 	}
 	return nil
 }
 
-func decompressFile(archive, outDir string) error {
+func decompressFile(archive, outDir string, method string) error {
 	f, err := os.Open(archive)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
-	gr, err := gzip.NewReader(f)
-	if err != nil {
-		return err
+	var reader io.ReadCloser
+	switch strings.ToLower(method) {
+	case "gzip":
+		gr, err := gzip.NewReader(f)
+		if err != nil {
+			return err
+		}
+		reader = gr
+	case "zstd":
+		zr, err := zstd.NewReader(f)
+		if err != nil {
+			return err
+		}
+		reader = zr
+	default:
+		return fmt.Errorf("unknown compression method: %s", method)
 	}
-	defer gr.Close()
+	defer reader.Close()
 
-	name := gr.Name
+	// if gzip header contains name use it; for zstd header name not available
+	name := ""
+	if strings.ToLower(method) == "gzip" {
+		if gr, ok := reader.(*gzip.Reader); ok {
+			name = gr.Name
+		}
+	}
 	if name == "" {
 		name = filepath.Base(archive)
 		// try to strip .goz
