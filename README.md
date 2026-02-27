@@ -71,3 +71,7 @@ Contributing
 License
 
 MIT — see `LICENSE`.
+
+Acknowledgements
+
+Go Zip uses `zstd` for the stronger compression backend (optional via `-method zstd`). The project uses the implementation from `github.com/klauspost/compress/zstd` — many thanks to @klauspost for that excellent work.
