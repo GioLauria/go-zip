@@ -22,6 +22,7 @@ func main() {
 	decompress := flag.Bool("D", false, "Decompress a .goz archive to a folder")
 	method := flag.String("method", "gzip", "compression method: gzip or zstd")
 	level := flag.Int("level", gzip.BestCompression, "gzip compression level (1-9). Higher = smaller, slower")
+	max := flag.Bool("max", false, "enable maximum compression (slower)")
 	out := flag.String("out", "", "output file or directory (optional)")
 	flag.Parse()
 
@@ -45,7 +46,7 @@ func main() {
 		if !strings.HasSuffix(strings.ToLower(outPath), ".goz") {
 			outPath = outPath + ".goz"
 		}
-		if err := compressFile(src, outPath, *level, *method); err != nil {
+		if err := compressFile(src, outPath, *level, *method, *max); err != nil {
 			fmt.Fprintln(os.Stderr, "compress error:", err)
 			os.Exit(1)
 		}
@@ -82,7 +83,7 @@ func main() {
 	}
 }
 
-func compressFile(src, dest string, level int, method string) error {
+func compressFile(src, dest string, level int, method string, max bool) error {
 	in, err := os.Open(src)
 	if err != nil {
 		return err
@@ -106,6 +107,10 @@ func compressFile(src, dest string, level int, method string) error {
 	var compressedSize int64
 	switch strings.ToLower(method) {
 	case "gzip":
+		// enforce max level for gzip when requested
+		if max {
+			level = gzip.BestCompression
+		}
 		gw, err := gzip.NewWriterLevel(out, level)
 		if err != nil {
 			return err
@@ -123,7 +128,25 @@ func compressFile(src, dest string, level int, method string) error {
 			compressedSize = fi.Size()
 		}
 	case "zstd":
-		// use strong zstd compression
+		// use strong zstd compression; if max set, prefer best compression and low concurrency
+		if max {
+			zw, err := zstd.NewWriter(out, zstd.WithEncoderLevel(zstd.SpeedBestCompression), zstd.WithEncoderConcurrency(1))
+			if err != nil {
+				return err
+			}
+			if _, err := io.Copy(zw, in); err != nil {
+				zw.Close()
+				return err
+			}
+			if err := zw.Close(); err != nil {
+				return err
+			}
+			if fi, err := out.Stat(); err == nil {
+				compressedSize = fi.Size()
+			}
+			break
+		}
+		// use strong zstd compression by default
 		zw, err := zstd.NewWriter(out, zstd.WithEncoderLevel(zstd.SpeedBestCompression))
 		if err != nil {
 			return err
