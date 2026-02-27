@@ -1,0 +1,77 @@
+#!/bin/sh
+set -e
+
+# post-commit: append last commit subject to CHANGELOG.md under '## [Unreleased]'
+# then stage and amend the commit so the changelog entry is included.
+
+repo_root=$(git rev-parse --show-toplevel || echo "")
+[ -n "$repo_root" ] || exit 0
+changelog="$repo_root/CHANGELOG.md"
+
+[ -f "$changelog" ] || exit 0
+
+# get last commit subject
+msg=$(git log -1 --pretty=%s)
+
+# if message already recorded, exit
+if grep -Fq "$msg" "$changelog"; then
+  exit 0
+fi
+
+# ensure Unreleased header exists
+if ! grep -q '^## \[Unreleased\]' "$changelog"; then
+  tmpfile=$(mktemp)
+  printf "## [Unreleased]\n\n- %s\n\n" "$msg" > "$tmpfile"
+  cat "$changelog" >> "$tmpfile"
+  mv "$tmpfile" "$changelog"
+else
+  # insert a new list item after the Unreleased header (after the header line)
+  tmpfile=$(mktemp)
+  awk -v m="$msg" 'BEGIN{inserted=0} {
+    print
+    if(!inserted && $0 ~ /^## \[Unreleased\]/){
+      getline; print; print "- " m; inserted=1
+    }
+  }' "$changelog" > "$tmpfile"
+  mv "$tmpfile" "$changelog"
+fi
+
+# stage and amend last commit to include changelog update
+git add "$changelog"
+# preserve original committer info when amending
+orig_committer_date=$(git show -s --format=%cI HEAD)
+orig_committer_name=$(git show -s --format='%cN' HEAD)
+orig_committer_email=$(git show -s --format='%cE' HEAD)
+
+GIT_COMMITTER_DATE="$orig_committer_date" \
+GIT_COMMITTER_NAME="$orig_committer_name" \
+GIT_COMMITTER_EMAIL="$orig_committer_email" \
+git commit --amend --no-edit --no-verify
+
+exit 0
+#!/bin/sh
+set -e
+
+CHLOG="CHANGELOG.md"
+
+# If the last commit already touched CHANGELOG.md, do nothing (prevents recursion)
+if git show -1 --name-only | grep -q "$CHLOG"; then
+  exit 0
+fi
+
+if [ ! -f "$CHLOG" ]; then
+  exit 0
+fi
+
+# Get last commit message
+MSG=$(git log -1 --pretty=%B)
+
+# Insert commit message as a bullet under '## [Unreleased]'
+awk -v m="$MSG" 'BEGIN{added=0} {print} /^## \[Unreleased\]/{ if(!added){print ""; print "- " m; added=1}}' "$CHLOG" > "$CHLOG.tmp" && mv "$CHLOG.tmp" "$CHLOG"
+
+# Stage and amend the commit to include the changelog update
+git add "$CHLOG"
+# Amend the commit; if it fails, leave the file staged for the next commit
+git commit --amend --no-edit --no-verify || true
+
+exit 0

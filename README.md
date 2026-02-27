@@ -14,6 +14,22 @@ Quick start
 Build the CLI:
 
 ```powershell
+# Go Zip
+
+Go Zip is a small, practical command-line tool and library for compressing single files with strong, easy-to-use defaults. The project provides a simple CLI at `cmd/goz` that produces compressed packages with the extension `.goz`.
+
+Key points
+
+- Purpose: fast, straightforward file compression for single files.
+- CLI: `cmd/goz` — compress an input file to `<input>.goz` by default or decompress with `-D`.
+- Default extension: `.goz` (customizable with `-out`).
+- Notes: gzip is the current default implementation; zstd is recommended for higher compression and can be added later.
+
+Quick start
+
+Build the CLI:
+
+```powershell
 go build -o goz ./cmd/goz
 ```
 
@@ -50,46 +66,30 @@ Roadmap / Recommendations
 
 - Add optional `zstd` backend (e.g. `github.com/klauspost/compress/zstd`) for higher compression ratios.
 - Add multi-file packaging or archive+compress mode if multi-file distribution is needed.
-# Go Zip
 
-Go Zip is a small, practical command-line tool and library for compressing single files with strong, easy-to-use defaults. The project provides a simple CLI at `cmd/goz` that produces compressed packages with the extension `.goz`.
+Project layout
 
-Key points
+- `cmd/goz` — compressor/decompressor CLI
+- `pkg/` — library code and helpers
+- `examples/` — usage examples
 
-- Purpose: fast, straightforward file compression for single files.
-- CLI: `cmd/goz` — compress an input file to `<input>.goz` by default or decompress with `-D`.
-- Default extension: `.goz` (customizable with `-out` or `-ext`).
-- Notes: gzip is the current default implementation; zstd is recommended for higher compression and can be added later.
+Contributing
 
-Quick start
+See the repository's tooling and CI configs for linting and tests. Use the hook installer in `scripts/` to enable local git hooks.
 
-Build the CLI:
+To enable the included local git hooks run the installer for your platform:
 
-```powershell
-go build -o goz.exe ./cmd/goz
+- Unix/macOS:
+
+```bash
+sh scripts/install-hooks.sh
 ```
 
-Compress a file:
+- Windows (PowerShell):
 
 ```powershell
-./goz.exe -C C:\path\to\file.txt
+.\scripts\install-hooks.ps1
 ```
-
-Decompress a `.goz` archive into a folder:
-
-```powershell
-./goz.exe -D C:\path\to\file.txt.goz C:\path\to\outdir
-```
-
-Common flags:
-
-- `-C` : compress a single file
-- `-D` : decompress an archive to a directory
-- `-out` : explicitly set output file or directory
-- `-level` : gzip compression level (1-9)
-
-What `goz` does
-
 - Reads a single input file and writes a compressed package (single-file archive).
 - By default writes `input + .goz` and stores the original filename in the gzip header.
 - Prints original and compressed sizes and the percent reduction.
