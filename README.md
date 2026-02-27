@@ -13,6 +13,20 @@ Key points
 Quick start
 
 Build the CLI:
+# Go Zip
+
+Go Zip is a small, practical command-line tool and library for compressing single files with strong, easy-to-use defaults. The project ships a simple CLI at `cmd/compress` that produces compressed packages with the extension `.goz`.
+
+Key points
+
+- Purpose: fast, straightforward file compression for single files.
+- CLI: `cmd/compress` — compress an input file to `<input>.goz` by default.
+- Default extension: `.goz` (customizable with `-out` or `-ext`).
+- Notes: gzip is the current default implementation; zstd is recommended for higher compression and can be added later.
+
+Quick start
+
+Build the CLI:
 
 ```powershell
 go build -o compress.exe ./cmd/compress
@@ -56,6 +70,4 @@ Contributing
 
 See the repository's tooling and CI configs for linting and tests. Use the hook installer in `scripts/` to enable local git hooks.
 
-``` 
-```
-- To enable the included local git hooks run the installer for your platform:
+To enable the included local git hooks run the installer for your platform:
