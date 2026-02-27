@@ -8,8 +8,14 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
 	zstd "github.com/klauspost/compress/zstd"
 )
+
+// zstdReadCloser adapts zstd.Decoder to io.ReadCloser (Close returns error)
+type zstdReadCloser struct{ *zstd.Decoder }
+
+func (z zstdReadCloser) Close() error { z.Decoder.Close(); return nil }
 
 func main() {
 	compress := flag.Bool("C", false, "Compress a single file")
@@ -146,7 +152,7 @@ func decompressFile(archive, outDir string, method string) error {
 		if err != nil {
 			return err
 		}
-		reader = zr
+		reader = zstdReadCloser{zr}
 	default:
 		return fmt.Errorf("unknown compression method: %s", method)
 	}
@@ -177,7 +183,7 @@ func decompressFile(archive, outDir string, method string) error {
 	}
 	defer outFile.Close()
 
-	if _, err := io.Copy(outFile, gr); err != nil {
+	if _, err := io.Copy(outFile, reader); err != nil {
 		return err
 	}
 	return nil
