@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func main() {
@@ -32,6 +33,10 @@ func main() {
 		if outPath == "" {
 			outPath = src + ".goz"
 		}
+		// always enforce .goz extension
+		if !strings.HasSuffix(strings.ToLower(outPath), ".goz") {
+			outPath = outPath + ".goz"
+		}
 		if err := compressFile(src, outPath, *level); err != nil {
 			fmt.Fprintln(os.Stderr, "compress error:", err)
 			os.Exit(1)
@@ -46,6 +51,11 @@ func main() {
 			os.Exit(2)
 		}
 		archive := flag.Arg(0)
+		// require .goz extension
+		if strings.ToLower(filepath.Ext(archive)) != ".goz" {
+			fmt.Fprintln(os.Stderr, "decompress error: archive must have .goz extension")
+			os.Exit(2)
+		}
 		outDir := *out
 		if outDir == "" {
 			if flag.NArg() == 2 {

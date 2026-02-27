@@ -1,139 +1,72 @@
 # Go Zip
 
-Go Zip is a small, practical command-line tool and library for compressing single files with strong, easy-to-use defaults. The project provides a simple CLI at `cmd/goz` that produces compressed packages with the extension `.goz`.
+Go Zip (`goz`) is a small command-line tool and Go library for compressing single files into portable `.goz` packages.
 
-Key points
+IMPORTANT: the compressed package extension is always `.goz` — this is required and enforced by the CLI.
 
-- Purpose: fast, straightforward file compression for single files.
-- CLI: `cmd/goz` — compress an input file to `<input>.goz` by default or decompress with `-D`.
-- Default extension: `.goz` (customizable with `-out`).
-- Notes: gzip is the current default implementation; zstd is recommended for higher compression and can be added later.
+Features
 
-Quick start
+- Compress a single file to a `.goz` package.
+- Decompress a `.goz` package and restore the original filename and content.
+- Cross-platform: builds for Windows, macOS, and Linux.
 
-Build the CLI:
+Build
 
-```powershell
-
-# Go Zip
-
-Go Zip is a small, practical command-line tool and library for compressing single files with strong, easy-to-use defaults. The project provides a simple CLI at `cmd/goz` that produces compressed packages with the extension `.goz`.
-
-Key points
-
-- Purpose: fast, straightforward file compression for single files.
-- CLI: `cmd/goz` — compress an input file to `<input>.goz` by default or decompress with `-D`.
-- Default extension: `.goz` (customizable with `-out`).
-- Notes: gzip is the current default implementation; zstd is recommended for higher compression and can be added later.
-
-Quick start
-
-Build the CLI (Unix/macOS):
+Unix / macOS:
 
 ```bash
 go build -o goz ./cmd/goz
 ```
 
-Build the CLI (Windows PowerShell):
+Windows (PowerShell):
 
 ```powershell
 go build -o goz.exe ./cmd/goz
 ```
 
-Compress a file (Unix or Windows):
+Usage
+
+Compress (writes `<input>.goz` by default):
 
 ```bash
 ./goz -C /path/to/file.txt
-# or on Windows PowerShell:
-./goz.exe -C C:\path\to\file.txt
+# Windows PowerShell:
+.\goz.exe -C C:\path\to\file.txt
 ```
 
-Decompress a `.goz` archive into a folder:
+If you pass `-out`, the CLI will ensure the output filename ends with `.goz`.
+
+Decompress (archive must have `.goz` extension):
 
 ```bash
 ./goz -D /path/to/file.txt.goz /path/to/outdir
-# or on Windows PowerShell:
-./goz.exe -D C:\path\to\file.txt.goz C:\path\to\outdir
+# Windows PowerShell:
+.\goz.exe -D C:\path\to\file.txt.goz C:\path\to\outdir
 ```
 
-Common flags:
+Flags
 
-- `-C` : compress a single file
-- `-D` : decompress an archive to a directory
-- `-out` : explicitly set output file or directory
+- `-C` : compress a single file (compress mode)
+- `-D` : decompress archive into directory (decompress mode)
+- `-out` : explicitly set output file (compress) or output directory (decompress)
 - `-level` : gzip compression level (1-9)
 
-What `goz` does
+Notes
 
-- Reads a single input file and writes a compressed package (single-file archive).
-- By default writes `input + .goz` and stores the original filename in the gzip header.
-- Prints original and compressed sizes and the percent reduction.
-
-Why `.goz`?
-
-`.goz` is a lightweight, project-specific extension that avoids colliding with common system extensions while being easy to identify as a Go Zip package. If/when zstd is adopted you may keep `.goz` or choose a zstd-specific marker such as `.gozst`.
-
-Roadmap / Recommendations
-
-- Add optional `zstd` backend (e.g. `github.com/klauspost/compress/zstd`) for higher compression ratios.
-- Add multi-file packaging or archive+compress mode if multi-file distribution is needed.
+- The CLI enforces the `.goz` extension for outputs and requires `.goz` for input archives when decompressing.
+- Current backend: gzip. For higher compression, a zstd backend can be added.
 
 Project layout
 
-- `cmd/goz` — compressor/decompressor CLI
-- `pkg/` — library code and helpers
-- `examples/` — usage examples
+- `cmd/goz` — CLI
+- `pkg/` — reusable packages and helpers
+- `examples/` — example usage
 
 Contributing
 
-See the repository's tooling and CI configs for linting and tests. Use the hook installer in `scripts/` to enable local git hooks.
+- Install local git hooks with `sh scripts/install-hooks.sh` (Unix/macOS) or `./scripts/install-hooks.ps1` (PowerShell).
+- Run linters and tests locally: `gofmt -w .`, `go vet ./...`, `go test ./...`.
 
-To enable the included local git hooks run the installer for your platform:
+License
 
-- Unix/macOS:
-
-```bash
-sh scripts/install-hooks.sh
-```
-
-- Windows (PowerShell):
-
-```powershell
-.\scripts\install-hooks.ps1
-```
-- Reads a single input file and writes a compressed package (single-file archive).
-- By default writes `input + .goz` and stores the original filename in the gzip header.
-- Prints original and compressed sizes and the percent reduction.
-
-Why `.goz`?
-
-`.goz` is a lightweight, project-specific extension that avoids colliding with common system extensions while being easy to identify as a Go Zip package. If/when zstd is adopted you may keep `.goz` or choose a zstd-specific marker such as `.gozst`.
-
-Roadmap / Recommendations
-
-- Add optional `zstd` backend (e.g. `github.com/klauspost/compress/zstd`) for higher compression ratios.
-- Add multi-file packaging or archive+compress mode if multi-file distribution is needed.
-
-Project layout
-
-- `cmd/goz` — compressor/decompressor CLI
-- `pkg/` — library code and helpers
-- `examples/` — usage examples
-
-Contributing
-
-See the repository's tooling and CI configs for linting and tests. Use the hook installer in `scripts/` to enable local git hooks.
-
-To enable the included local git hooks run the installer for your platform:
-
-- Unix/macOS:
-
-```bash
-sh scripts/install-hooks.sh
-```
-
-- Windows (PowerShell):
-
-```powershell
-.\scripts\install-hooks.ps1
-```
+MIT — see `LICENSE`.
