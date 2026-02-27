@@ -14,6 +14,7 @@ Quick start
 Build the CLI:
 
 ```powershell
+
 # Go Zip
 
 Go Zip is a small, practical command-line tool and library for compressing single files with strong, easy-to-use defaults. The project provides a simple CLI at `cmd/goz` that produces compressed packages with the extension `.goz`.
@@ -27,22 +28,32 @@ Key points
 
 Quick start
 
-Build the CLI:
+Build the CLI (Unix/macOS):
 
-```powershell
+```bash
 go build -o goz ./cmd/goz
 ```
 
-Compress a file:
+Build the CLI (Windows PowerShell):
 
 ```powershell
-./goz -C C:\path\to\file.txt
+go build -o goz.exe ./cmd/goz
+```
+
+Compress a file (Unix or Windows):
+
+```bash
+./goz -C /path/to/file.txt
+# or on Windows PowerShell:
+./goz.exe -C C:\path\to\file.txt
 ```
 
 Decompress a `.goz` archive into a folder:
 
-```powershell
-./goz -D C:\path\to\file.txt.goz C:\path\to\outdir
+```bash
+./goz -D /path/to/file.txt.goz /path/to/outdir
+# or on Windows PowerShell:
+./goz.exe -D C:\path\to\file.txt.goz C:\path\to\outdir
 ```
 
 Common flags:
