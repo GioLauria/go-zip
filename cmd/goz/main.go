@@ -88,6 +88,11 @@ func compressFile(src, dest string, level int, method string) error {
 		return err
 	}
 	defer in.Close()
+	// get uncompressed size if available
+	var uncompressedSize int64
+	if fi, err := in.Stat(); err == nil {
+		uncompressedSize = fi.Size()
+	}
 
 	if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
 		return err
@@ -98,6 +103,7 @@ func compressFile(src, dest string, level int, method string) error {
 	}
 	defer out.Close()
 
+	var compressedSize int64
 	switch strings.ToLower(method) {
 	case "gzip":
 		gw, err := gzip.NewWriterLevel(out, level)
@@ -113,6 +119,9 @@ func compressFile(src, dest string, level int, method string) error {
 		if err := gw.Close(); err != nil {
 			return err
 		}
+		if fi, err := out.Stat(); err == nil {
+			compressedSize = fi.Size()
+		}
 	case "zstd":
 		// use strong zstd compression
 		zw, err := zstd.NewWriter(out, zstd.WithEncoderLevel(zstd.SpeedBestCompression))
@@ -126,8 +135,18 @@ func compressFile(src, dest string, level int, method string) error {
 		if err := zw.Close(); err != nil {
 			return err
 		}
+		if fi, err := out.Stat(); err == nil {
+			compressedSize = fi.Size()
+		}
 	default:
 		return fmt.Errorf("unknown compression method: %s", method)
+	}
+	// print sizes and compression ratio (MB)
+	fmt.Printf("Uncompressed: %.2f MB\n", float64(uncompressedSize)/(1024*1024))
+	fmt.Printf("Compressed:   %.2f MB\n", float64(compressedSize)/(1024*1024))
+	if uncompressedSize > 0 {
+		saved := 100 * (1.0 - float64(compressedSize)/float64(uncompressedSize))
+		fmt.Printf("Reduction:    %.2f%%\n", saved)
 	}
 	return nil
 }
@@ -138,6 +157,11 @@ func decompressFile(archive, outDir string, method string) error {
 		return err
 	}
 	defer f.Close()
+	// compressed size (archive)
+	var compressedSize int64
+	if fi, err := f.Stat(); err == nil {
+		compressedSize = fi.Size()
+	}
 
 	var reader io.ReadCloser
 	switch strings.ToLower(method) {
@@ -185,6 +209,18 @@ func decompressFile(archive, outDir string, method string) error {
 
 	if _, err := io.Copy(outFile, reader); err != nil {
 		return err
+	}
+	// get uncompressed size
+	var uncompressedSize int64
+	if fi, err := outFile.Stat(); err == nil {
+		uncompressedSize = fi.Size()
+	}
+
+	fmt.Printf("Compressed:   %.2f MB\n", float64(compressedSize)/(1024*1024))
+	fmt.Printf("Uncompressed: %.2f MB\n", float64(uncompressedSize)/(1024*1024))
+	if uncompressedSize > 0 {
+		saved := 100 * (1.0 - float64(compressedSize)/float64(uncompressedSize))
+		fmt.Printf("Reduction:    %.2f%%\n", saved)
 	}
 	return nil
 }
