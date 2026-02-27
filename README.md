@@ -1,26 +1,12 @@
 # Go Zip
 
-Go Zip is a small, practical command-line tool and library for compressing single files with strong, easy-to-use defaults. The project ships a simple CLI at `cmd/compress` that produces compressed packages with the extension `.goz`.
+Go Zip is a small, practical command-line tool and library for compressing single files with strong, easy-to-use defaults. The project provides a simple CLI at `cmd/goz` that produces compressed packages with the extension `.goz`.
 
 Key points
 
 - Purpose: fast, straightforward file compression for single files.
-- CLI: `cmd/compress` — compress an input file to `<input>.goz` by default.
-- Default extension: `.goz` (customizable with `-out` or `-ext`).
-- Notes: gzip is the current default implementation; zstd is recommended for higher compression and can be added later.
-
-Quick start
-
-Build the CLI:
-# Go Zip
-
-Go Zip is a small, practical command-line tool and library for compressing single files with strong, easy-to-use defaults. The project ships a simple CLI at `cmd/compress` that produces compressed packages with the extension `.goz`.
-
-Key points
-
-- Purpose: fast, straightforward file compression for single files.
-- CLI: `cmd/compress` — compress an input file to `<input>.goz` by default.
-- Default extension: `.goz` (customizable with `-out` or `-ext`).
+- CLI: `cmd/goz` — compress an input file to `<input>.goz` by default or decompress with `-D`.
+- Default extension: `.goz` (customizable with `-out`).
 - Notes: gzip is the current default implementation; zstd is recommended for higher compression and can be added later.
 
 Quick start
@@ -28,36 +14,42 @@ Quick start
 Build the CLI:
 
 ```powershell
-go build -o compress.exe ./cmd/compress
+go build -o goz ./cmd/goz
 ```
 
-Compress a file (best gzip compression):
+Compress a file:
 
 ```powershell
-./compress.exe -level 9 path\to\file.ext
+./goz -C C:\path\to\file.txt
 ```
 
-Specify output path or extension:
+Decompress a `.goz` archive into a folder:
 
 ```powershell
-./compress.exe -out archive.goz path\to\file.ext
-./compress.exe -ext .goz path\to\file.ext
+./goz -D C:\path\to\file.txt.goz C:\path\to\outdir
 ```
 
-What `cmd/compress` does
+Common flags:
 
-- Reads a single input file and writes a compressed package.
+- `-C` : compress a single file
+- `-D` : decompress an archive to a directory
+- `-out` : explicitly set output file or directory
+- `-level` : gzip compression level (1-9)
+
+What `goz` does
+
+- Reads a single input file and writes a compressed package (single-file archive).
 - By default writes `input + .goz` and stores the original filename in the gzip header.
 - Prints original and compressed sizes and the percent reduction.
 
 Why `.goz`?
 
-`.goz` is a lightweight, project-specific extension that avoids colliding with system-used extensions while being easy to identify as a Go Zip package. If/when zstd is adopted, you may choose `.goz` to remain consistent or use `.gozst` / `.gzst` if you prefer an explicit zstd marker.
+`.goz` is a lightweight, project-specific extension that avoids colliding with common system extensions while being easy to identify as a Go Zip package. If/when zstd is adopted you may keep `.goz` or choose a zstd-specific marker such as `.gozst`.
 
 Roadmap / Recommendations
 
-- Add optional `zstd` backend (e.g. `github.com/klauspost/compress/zstd`) for higher compression ratios — often much better than gzip for many inputs.
-- Add multi-file packaging or archive+compress mode later if needed.
+- Add optional `zstd` backend (e.g. `github.com/klauspost/compress/zstd`) for higher compression ratios.
+- Add multi-file packaging or archive+compress mode if multi-file distribution is needed.
 # Go Zip
 
 Go Zip is a small, practical command-line tool and library for compressing single files with strong, easy-to-use defaults. The project provides a simple CLI at `cmd/goz` that produces compressed packages with the extension `.goz`.
