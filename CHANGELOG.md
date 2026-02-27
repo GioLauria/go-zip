@@ -9,6 +9,3 @@ Versioning.
 
 - Placeholder for upcoming changes.
 
-## [0.1.0] - 2026-02-24
-
-- Initial template content.
