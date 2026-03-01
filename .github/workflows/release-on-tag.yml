@@ -53,6 +53,23 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Verify tag signature (best-effort)
+        shell: bash
+        run: |
+          TAG=${GITHUB_REF_NAME}
+          echo "Attempting to verify tag signature for $TAG"
+          # install gpg if missing
+          if ! command -v gpg >/dev/null 2>&1; then
+            sudo apt-get update && sudo apt-get install -y gnupg
+          fi
+          # attempt verification; don't fail the workflow if public key is missing
+          if git tag -v "$TAG" 2>&1 | tee /tmp/tag-verify.out; then
+            echo "Tag $TAG: signature verified"
+          else
+            echo "Warning: tag verification failed or public key missing. Proceeding to create release anyway."
+            cat /tmp/tag-verify.out || true
+          fi
+
       - name: Get tag and previous tag
         id: tags
         run: |
