@@ -28,7 +28,7 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          bash scripts/ci/build-artifacts.sh "${{ matrix.os }}"
+          bash .github/workflows/ci/build-artifacts.sh "${{ matrix.os }}"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -48,7 +48,7 @@ jobs:
       - name: Verify tag signature (best-effort)
         shell: bash
         run: |
-          bash scripts/ci/verify-tag.sh "${{ github.ref_name }}"
+          bash .github/workflows/ci/verify-tag.sh "${{ github.ref_name }}"
 
       - name: Get tag and previous tag
         id: tags
@@ -61,7 +61,7 @@ jobs:
       - name: Generate release notes
         shell: bash
         run: |
-          bash scripts/ci/generate-release-notes.sh "${{ github.ref_name }}" "${{ env.PREV_TAG }}"
+          bash .github/workflows/ci/generate-release-notes.sh "${{ github.ref_name }}" "${{ env.PREV_TAG }}"
 
       - name: Download artifacts
         uses: actions/download-artifact@v4
