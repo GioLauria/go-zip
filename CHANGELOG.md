@@ -7,22 +7,10 @@ Semantic Versioning.
 
 ## [Unreleased]
 
-- chore(hooks): add pre-push tag handling and guard post-commit to avoid loops (Giovanni Lauria)
-- chore(release): ensure Unreleased header is at top (Giovanni Lauria)
-- chore(release): move Unreleased -> v0.0.2 (local) (Giovanni Lauria)
+- No released versions yet. Work in progress.
 
-## [v0.0.2] - 2026-03-01
-
-- ci(release): split workflows and update changelog-on-tag behavior (Giovanni Lauria)
-- ci(release): split tag->changelog and release build workflows (Giovanni Lauria)
-- bench(gozalgo): add benchmarks for block size and parallelism; document benchmark usage (Giovanni Lauria)
-- feat(gozalgo): parallel block compression; GOZ1 compatibility; document GOZ container format (Giovanni Lauria)
-- test(gozalgo): add round-trip unit tests; format and CRC/versioned GOZ container; reuse/optimize encoders (Giovanni Lauria)
-- feat(goz): add Goz.Algo per-block best-of (zstd,lz4,brotli,snappy) and CLI flag (Giovanni Lauria)
-- ci: target master branch instead of main (Giovanni Lauria)
-
-
-## [v0.0.1] - 2026-03-01
-
-- Initial release — packaged binaries for Windows and Linux (Ubuntu).
+<!--
+Historical releases have been removed by request. You can recreate tags
+and add release entries here when publishing.
+-->
 
