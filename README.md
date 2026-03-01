@@ -107,3 +107,19 @@ Notes:
 - The `gozalgo` implementation writes the GOZ2 format and verifies CRCs on read. The decompressor is compatible with GOZ1 archives and will accept and decode them.
 - The default algorithm selection strategy for `Goz.Algo` is per-block "best-of": each block is compressed with zstd, lz4, brotli, and snappy, and the smallest compressed result is stored. This favors size over CPU and can be tuned for performance.
 
+Benchmarks
+
+You can measure `gozalgo` throughput and CPU usage using the included benchmarks. From the repository root run:
+
+```bash
+go test ./pkg/gozalgo -bench . -benchmem
+```
+
+To run focused benchmarks with custom `-benchtime`:
+
+```bash
+go test ./pkg/gozalgo -bench . -benchmem -benchtime=3s
+```
+
+The benchmark file `pkg/gozalgo/bench_test.go` exercises different block sizes and worker counts to help choose sensible defaults for `--block-size` and `--parallel`.
+
