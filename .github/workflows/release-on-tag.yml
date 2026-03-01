@@ -26,14 +26,17 @@ jobs:
           go-version: '1.23'
 
       - name: Build
+        shell: bash
         run: |
           mkdir -p artifacts
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            GOOS=windows; OUT=goz.exe
+            GOOS=windows
+            OUT=goz.exe
           else
-            GOOS=linux; OUT=goz
+            GOOS=linux
+            OUT=goz
           fi
-          env GOOS=$GOOS go build -ldflags "-s -w" -o artifacts/${OUT} ./cmd/goz
+          GOOS=$GOOS go build -ldflags "-s -w" -o artifacts/${OUT} ./cmd/goz
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
