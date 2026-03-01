@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+#!/usr/bin/env bash
+set -euo pipefail
 
 # Build artifacts for the given OS matrix (called from GitHub Actions)
 # Usage: build-artifacts.sh <matrix-os>

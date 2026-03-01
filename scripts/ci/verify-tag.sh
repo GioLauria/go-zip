@@ -1,3 +1,4 @@
+# Remove Markdown fence lines
 #!/usr/bin/env bash
 set -euo pipefail
 
