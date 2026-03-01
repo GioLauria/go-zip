@@ -53,7 +53,7 @@ jobs:
       - name: Get tag and previous tag
         id: tags
         run: |
-          echo "TAG=${GITHUB_REF_NAME}" >> $GITHUB_ENV
+          echo "TAG=${{ github.ref_name }}" >> $GITHUB_ENV
           PREV_TAG=$(git tag --sort=-creatordate | grep -E '^v' | sed -n '2p' || true)
           echo "PREV_TAG=${PREV_TAG}" >> $GITHUB_ENV
           echo "Found previous tag: ${PREV_TAG}"
