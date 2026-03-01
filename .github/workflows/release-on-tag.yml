@@ -28,15 +28,7 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          mkdir -p artifacts
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            GOOS=windows
-            OUT=goz.exe
-          else
-            GOOS=linux
-            OUT=goz
-          fi
-          GOOS=$GOOS go build -ldflags "-s -w" -o artifacts/${OUT} ./cmd/goz
+          scripts/ci/build-artifacts.sh "${{ matrix.os }}"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -56,19 +48,7 @@ jobs:
       - name: Verify tag signature (best-effort)
         shell: bash
         run: |
-          TAG=${GITHUB_REF_NAME}
-          echo "Attempting to verify tag signature for $TAG"
-          # install gpg if missing
-          if ! command -v gpg >/dev/null 2>&1; then
-            sudo apt-get update && sudo apt-get install -y gnupg
-          fi
-          # attempt verification; don't fail the workflow if public key is missing
-          if git tag -v "$TAG" 2>&1 | tee /tmp/tag-verify.out; then
-            echo "Tag $TAG: signature verified"
-          else
-            echo "Warning: tag verification failed or public key missing. Proceeding to create release anyway."
-            cat /tmp/tag-verify.out || true
-          fi
+          scripts/ci/verify-tag.sh "${{ github.ref_name }}"
 
       - name: Get tag and previous tag
         id: tags
@@ -79,24 +59,9 @@ jobs:
           echo "Found previous tag: ${PREV_TAG}"
 
       - name: Generate release notes
+        shell: bash
         run: |
-          TAG=${GITHUB_REF_NAME}
-          PREV=${PREV_TAG}
-          if [ -z "$PREV" ]; then
-            RANGE=""
-          else
-            RANGE="$PREV..$TAG"
-          fi
-          DATE=$(date +%Y-%m-%d)
-          echo "## [$TAG] - $DATE" > RELEASE_NOTES.md
-          echo >> RELEASE_NOTES.md
-          if [ -z "$RANGE" ]; then
-            git log --pretty=format:"- %s (%an)" --no-merges >> RELEASE_NOTES.md || true
-          else
-            git log "$RANGE" --pretty=format:"- %s (%an)" --no-merges >> RELEASE_NOTES.md || true
-          fi
-          echo >> RELEASE_NOTES.md
-          cat RELEASE_NOTES.md
+          scripts/ci/generate-release-notes.sh "${{ github.ref_name }}" "${{ env.PREV_TAG }}"
 
       - name: Download artifacts
         uses: actions/download-artifact@v4
