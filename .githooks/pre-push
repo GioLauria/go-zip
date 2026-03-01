@@ -1,0 +1,36 @@
+#!/bin/sh
+set -e
+
+# pre-push hook: detect tags being pushed and move Unreleased -> <tag>
+# This runs locally before pushing refs to the remote.
+
+read -r local_ref local_sha remote_ref remote_sha
+handled=0
+while [ -n "$local_ref" ]; do
+  case "$local_ref" in
+    refs/tags/*)
+      tag=${local_ref#refs/tags/}
+      CHLOG=CHANGELOG.md
+      if [ -f "$CHLOG" ]; then
+        DATE=$(date +%Y-%m-%d)
+        # Replace first occurrence of '## [Unreleased]' with the tag header
+        awk -v TAG="$tag" -v DATE="$DATE" 'BEGIN{repl=0} {
+          if(!repl && $0=="## [Unreleased]"){
+            print "## ["TAG"] - "DATE; repl=1; next
+          }
+          print
+        }' "$CHLOG" > "$CHLOG.tmp"
+        # Insert fresh Unreleased header at top
+        awk 'NR==1{print; print "## [Unreleased]\n"; next} {print}' "$CHLOG.tmp" > "$CHLOG.new"
+        mv "$CHLOG.new" "$CHLOG"
+        rm -f "$CHLOG.tmp"
+        git add "$CHLOG"
+        git commit -m "chore(release): move Unreleased -> ${tag}" || true
+      fi
+      handled=1
+      ;;
+  esac
+  read -r local_ref local_sha remote_ref remote_sha || break
+done
+
+exit 0
