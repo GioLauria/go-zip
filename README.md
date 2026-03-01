@@ -104,6 +104,44 @@ sh scripts/auto-commit-push.sh "chore: describe change"
 
 If you prefer to manage commits manually, make sure to `git add` your docs changes along with code, run `git commit -S`, and then `git push`.
 
+Hooks setup
+
+The repository includes a set of local Git hooks in the `.githooks/` directory and helper installer scripts in `scripts/` to make onboarding easy.
+
+- Install hooks (Unix / macOS):
+
+```bash
+sh scripts/install-hooks.sh
+```
+
+- Install hooks (Windows PowerShell):
+
+```powershell
+.\scripts\install-hooks.ps1
+```
+
+- Manual install (advanced): set Git to use the repository hooks folder without modifying the global configuration:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+Notes:
+
+- The install scripts will copy or configure your repo to use the `.githooks/` hooks. They do not change your global Git configuration by default.
+- The hooks enforce formatting, tests, and the repository policy that code changes must be accompanied by documentation changes (README, `docs/`, or `CHANGELOG.md`). The `pre-commit` hook will block commits that violate this rule.
+- The `post-commit` hook will attempt to amend the commit to include a changelog entry and sign the amended commit. If GPG is not configured the hook will warn and leave the commit unsigned.
+- The `pre-push` hook verifies that tags pushed are GPG-signed and will abort a push if an unsigned tag is detected.
+- If you don't want hooks active for a particular machine or temporarily, you can disable them by running:
+
+```bash
+git config --unset core.hooksPath
+```
+
+Or restore your prior `core.hooksPath` value.
+
+For contributors: ensure GPG is configured and `user.signingkey` is set so commit signing and tag verification work as expected. See `docs/developer.md` for GPG setup notes.
+
 ## GOZ container format
 
 go-zip uses a simple container format for `.goz` archives. There are two versions in use:
