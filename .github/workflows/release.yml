@@ -95,7 +95,7 @@ jobs:
           mv CHANGELOG.new CHANGELOG.md || true
           git add CHANGELOG.md || true
           git commit -m "chore(release): update CHANGELOG for ${GITHUB_REF_NAME}" || echo "No CHANGELOG changes to commit"
-          git push origin HEAD:main || echo "Push of CHANGELOG back to main failed or not permitted"
+          git push origin HEAD:master || echo "Push of CHANGELOG back to master failed or not permitted"
 
       - name: Create GitHub release and upload artifacts
         uses: ncipollo/release-action@v1

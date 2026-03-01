@@ -67,7 +67,7 @@ Windows (PowerShell):
 
 ## Pull requests
 
-- Open a pull request against `main` (or the repository's default branch).
+- Open a pull request against `master` (or the repository's default branch).
 - In the PR description explain the change, rationale, and how it was tested.
 - Link related issues where applicable.
 - Add or update tests for new behavior when relevant.
