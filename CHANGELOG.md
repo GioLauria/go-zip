@@ -6,6 +6,7 @@ The format is based on Keep a Changelog, and this project adheres to
 Semantic Versioning.
 
 ## [Unreleased]
+
 ## [v0.0.2] - 2026-03-01
 
 - ci(release): split workflows and update changelog-on-tag behavior (Giovanni Lauria)
@@ -20,6 +21,4 @@ Semantic Versioning.
 ## [v0.0.1] - 2026-03-01
 
 - Initial release — packaged binaries for Windows and Linux (Ubuntu).
-
-## [Unreleased]
 
