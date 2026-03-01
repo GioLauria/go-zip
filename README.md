@@ -91,6 +91,19 @@ Contributing
 
 If you'd like to contribute, see `CONTRIBUTING.md` for development setup, tests, and pull request guidelines. Install local hooks with `sh scripts/install-hooks.sh` or `./scripts/install-hooks.ps1` on Windows to enable pre-commit checks.
 
+Commit & Push Policy
+
+- **Docs required for code changes:** Any commit that modifies source code must also include updates to documentation (`docs/`), `README.md`, or `CHANGELOG.md`. The repo includes a helper script `scripts/auto-commit-push.sh` that stages changes, enforces documentation updates when code changes are present, signs the commit (`-S`), and pushes.
+- **Signed commits:** We prefer signed commits; the helper script and hooks will attempt to sign commits. Ensure GPG is configured locally (`gpg --list-secret-keys`) and `user.signingkey` is set in git config.
+
+Usage (helper):
+
+```bash
+sh scripts/auto-commit-push.sh "chore: describe change"
+```
+
+If you prefer to manage commits manually, make sure to `git add` your docs changes along with code, run `git commit -S`, and then `git push`.
+
 ## GOZ container format
 
 go-zip uses a simple container format for `.goz` archives. There are two versions in use:

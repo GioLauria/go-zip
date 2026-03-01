@@ -10,6 +10,29 @@ if [ -n "$unformatted" ]; then
   exit 1
 fi
 
+# ensure documentation is updated when code changes are staged
+staged_files=$(git diff --cached --name-only)
+if [ -n "$staged_files" ]; then
+  code_changed=0
+  docs_present=0
+  for f in $staged_files; do
+    case "$f" in
+      docs/*|README.md|CHANGELOG.md|*.md)
+        docs_present=1
+        ;;
+      *)
+        code_changed=1
+        ;;
+    esac
+  done
+
+  if [ "$code_changed" -eq 1 ] && [ "$docs_present" -eq 0 ]; then
+    echo "Error: code changes detected but no documentation updated."
+    echo "Please update README.md, docs/, or CHANGELOG.md and stage them before committing."
+    exit 1
+  fi
+fi
+
 echo "pre-commit: running go vet..."
 go vet ./...
 
