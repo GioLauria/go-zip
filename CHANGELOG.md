@@ -7,6 +7,10 @@ Semantic Versioning.
 
 ## [Unreleased]
 
+- chore(hooks): add pre-push tag handling and guard post-commit to avoid loops (Giovanni Lauria)
+- chore(release): ensure Unreleased header is at top (Giovanni Lauria)
+- chore(release): move Unreleased -> v0.0.2 (local) (Giovanni Lauria)
+
 ## [v0.0.2] - 2026-03-01
 
 - ci(release): split workflows and update changelog-on-tag behavior (Giovanni Lauria)
