@@ -26,9 +26,10 @@ $out | Set-Content $chlog -Encoding UTF8
 
 git add $chlog
 try {
-    git commit --amend --no-edit -q
+    # attempt to sign the amended commit; if signing fails, warn the user
+    git commit --amend --no-edit -S -q
 } catch {
-    # leave staged if amend fails
+    Write-Warning "Failed to sign amended commit. Ensure GPG is configured and run: git commit --amend -S"
 }
 
 exit 0

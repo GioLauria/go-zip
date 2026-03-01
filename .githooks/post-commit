@@ -61,6 +61,8 @@ orig_committer_email=$(git show -s --format='%cE' HEAD)
 GIT_COMMITTER_DATE="$orig_committer_date" \
 GIT_COMMITTER_NAME="$orig_committer_name" \
 GIT_COMMITTER_EMAIL="$orig_committer_email" \
-git commit --amend --no-edit --no-verify || true
+git commit --amend --no-edit -S --no-verify 2>/dev/null || {
+  echo "Warning: failed to sign amended commit. Please ensure GPG is configured and try: git commit --amend -S"
+}
 
 exit 0
