@@ -1,58 +1,53 @@
-# Contributing
+# Contributing to go-zip
 
-Thanks for your interest in contributing!
-
-> Note: please review project name, language, and tooling placeholders if present before publishing.
+Thanks for your interest in contributing to **go-zip**. This document explains how to set up a development environment, run checks, and submit changes.
 
 ## Ways to contribute
 
-- Report bugs and request features
-- Improve documentation
-- Submit code changes
-- Review pull requests
+- Report bugs and request features using the issue templates.
+- Improve or expand documentation in `README.md` or `docs/`.
+- Submit code changes via pull requests.
+- Review open pull requests and provide feedback.
 
 ## Code of Conduct
 
-Please follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+Please follow the project's Code of Conduct: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
 ## Development setup
 
-1. Fork and clone the repo.
-2. Install dependencies (TBD).
-3. Run tests (TBD).
+Prerequisites:
 
-## Branching and commits
+- Install Go (this repository declares Go 1.23 in `go.mod`).
 
-- Use short, descriptive branch names.
-- Keep commits focused and small.
-- Use clear commit messages (TBD).
+Clone and prepare:
 
-## Pull requests
+1. Fork the repository and clone your fork:
 
-- Describe the change and the motivation.
-- Add or update tests where appropriate.
-# Contributing
+```bash
+git clone git@github.com:<your-username>/go-zip.git
+cd go-zip
+git remote add upstream git@github.com:GioLauria/go-zip.git
+```
 
-Thank you for helping improve Go Zip — contributions are welcome. This document explains how to set up a development environment, run checks, and submit changes.
-
-Getting started
-
-1. Fork this repository and create a feature branch: `git checkout -b feat/my-change`.
-2. Ensure you have Go 1.20+ installed.
-3. From the repository root run:
+2. Ensure dependencies are present and code is formatted:
 
 ```bash
 go mod tidy
 gofmt -w .
+```
+
+3. Run static checks and tests:
+
+```bash
 go vet ./...
 go test ./...
 ```
 
-Local git hooks
+## Local git hooks
 
-This repo includes local hooks in `.githooks/`. Install them to run checks automatically:
+This repository includes local hooks to run checks automatically. Install them with:
 
-Unix/macOS:
+Unix / macOS:
 
 ```bash
 sh scripts/install-hooks.sh
@@ -64,33 +59,35 @@ Windows (PowerShell):
 .\scripts\install-hooks.ps1
 ```
 
-Coding standards
+## Branching and commits
 
-- Run `gofmt -w .` before committing.
-- Keep functions small and tests focused.
-- Add unit tests for new behavior and run `go test ./...`.
+- Use short, descriptive branch names (e.g. `feat/add-compression-flag`, `fix/handle-empty-archive`).
+- Keep commits focused and small.
+- Use clear, imperative commit messages. We recommend Conventional Commits (e.g. `feat:`, `fix:`, `chore:`).
 
-Commit messages and PRs
+## Pull requests
 
-- Use clear, imperative commit messages (e.g. `feat: add zstd method flag`).
-- Open a pull request describing the change, rationale, and testing performed.
-- Link related issues in the PR description.
+- Open a pull request against `main` (or the repository's default branch).
+- In the PR description explain the change, rationale, and how it was tested.
+- Link related issues where applicable.
+- Add or update tests for new behavior when relevant.
 
-Pull request checklist
+### Pull request checklist
 
 - [ ] Tests added or updated where applicable
 - [ ] Code formatted with `gofmt`
 - [ ] CI passes (lint/test/build)
 - [ ] Documentation updated (README or `docs/`)
 
-Reporting issues
+## Reporting issues
 
-- Use the issue templates in `.github/ISSUE_TEMPLATE/` when filing bugs or feature requests.
+Use the issue templates in `.github/ISSUE_TEMPLATE/` when filing bugs or feature requests. Provide steps to reproduce, expected vs actual behavior, and relevant logs or stack traces.
 
-Changelog and releases
+## Changelog and releases
 
-- The project follows Keep a Changelog (`CHANGELOG.md`). Use the `Unreleased` section for ongoing changes; maintainers will cut releases and move entries into versioned headings.
+This project follows Keep a Changelog (`CHANGELOG.md`). Add unreleased changes to the `Unreleased` section; maintainers will cut releases and update versioned headings.
 
-Code of Conduct
+## Additional notes
 
-- Please follow the project's Code of Conduct (see `CODE_OF_CONDUCT.md`).
+- If you're planning a larger design change, open an issue or discussion first to gather feedback.
+- For maintainers: ensure CI, changelog, and release notes are updated when merging significant changes.
