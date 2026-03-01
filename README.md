@@ -79,3 +79,31 @@ Go Zip uses `zstd` for the stronger compression backend (optional via `-method z
 Contributing
 
 If you'd like to contribute, see `CONTRIBUTING.md` for development setup, tests, and pull request guidelines. Install local hooks with `sh scripts/install-hooks.sh` or `./scripts/install-hooks.ps1` on Windows to enable pre-commit checks.
+
+## GOZ container format
+
+go-zip uses a simple container format for `.goz` archives. There are two versions in use:
+
+- GOZ1: original format (legacy compatibility). Structure:
+	- 4 bytes: ASCII `GOZ1` magic
+	- repeated blocks:
+		- 1 byte: algorithm id (0=zstd,1=lz4,2=brotli,3=snappy)
+		- 4 bytes BE: compressed length
+		- 4 bytes BE: uncompressed length
+		- compressed payload
+
+- GOZ2: current format with version and per-block CRC. Structure:
+	- 4 bytes: ASCII `GOZ2` magic
+	- 1 byte: version (currently `1`)
+	- repeated blocks:
+		- 1 byte: algorithm id (0=zstd,1=lz4,2=brotli,3=snappy)
+		- 4 bytes BE: compressed length
+		- 4 bytes BE: uncompressed length
+		- 4 bytes BE: CRC32 of uncompressed block
+		- compressed payload
+
+Notes:
+
+- The `gozalgo` implementation writes the GOZ2 format and verifies CRCs on read. The decompressor is compatible with GOZ1 archives and will accept and decode them.
+- The default algorithm selection strategy for `Goz.Algo` is per-block "best-of": each block is compressed with zstd, lz4, brotli, and snappy, and the smallest compressed result is stored. This favors size over CPU and can be tuned for performance.
+

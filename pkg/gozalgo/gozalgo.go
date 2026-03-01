@@ -133,16 +133,22 @@ func Decompress(r io.Reader, w io.Writer) error {
 	if _, err := io.ReadFull(r, header); err != nil {
 		return err
 	}
-	if string(header) != Magic {
+	magic := string(header)
+	oldFormat := false
+	if magic == Magic {
+		// read version
+		ver := make([]byte, 1)
+		if _, err := io.ReadFull(r, ver); err != nil {
+			return err
+		}
+		if ver[0] != Version {
+			return errors.New("unsupported goz version")
+		}
+	} else if magic == "GOZ1" {
+		// compatibility: old format has no version or CRC
+		oldFormat = true
+	} else {
 		return errors.New("invalid goz magic")
-	}
-	// read version
-	ver := make([]byte, 1)
-	if _, err := io.ReadFull(r, ver); err != nil {
-		return err
-	}
-	if ver[0] != Version {
-		return errors.New("unsupported goz version")
 	}
 	for {
 		h := make([]byte, 1)
@@ -162,8 +168,10 @@ func Decompress(r io.Reader, w io.Writer) error {
 			return err
 		}
 		var crc uint32
-		if err := binary.Read(r, binary.BigEndian, &crc); err != nil {
-			return err
+		if !oldFormat {
+			if err := binary.Read(r, binary.BigEndian, &crc); err != nil {
+				return err
+			}
 		}
 		data := make([]byte, clen)
 		if _, err := io.ReadFull(r, data); err != nil {
@@ -205,9 +213,11 @@ func Decompress(r io.Reader, w io.Writer) error {
 		default:
 			return errors.New("unknown algorithm in goz archive")
 		}
-		// verify CRC32 of uncompressed data
-		if crc != crc32.ChecksumIEEE(out) {
-			return errors.New("crc mismatch in goz archive block")
+		if !oldFormat {
+			// verify CRC32 of uncompressed data
+			if crc != crc32.ChecksumIEEE(out) {
+				return errors.New("crc mismatch in goz archive block")
+			}
 		}
 		if _, err := w.Write(out); err != nil {
 			return err
