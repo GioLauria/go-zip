@@ -74,4 +74,5 @@ jobs:
           tag: ${{ env.TAG }}
           name: ${{ env.TAG }}
           body_path: RELEASE_NOTES.md
-          files: artifacts/*
+          # include files inside artifact directories (artifactName/file)
+          files: artifacts/*/*
