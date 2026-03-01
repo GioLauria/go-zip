@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/GioLauria/go-zip/pkg/gozalgo"
 	zstd "github.com/klauspost/compress/zstd"
 )
 
@@ -162,6 +163,16 @@ func compressFile(src, dest string, level int, method string, max bool) error {
 			compressedSize = fi.Size()
 		}
 	default:
+		if strings.ToLower(method) == "goz" {
+			// use custom Goz.Algo
+			if err := gozalgo.Compress(in, out, 64*1024); err != nil {
+				return err
+			}
+			if fi, err := out.Stat(); err == nil {
+				compressedSize = fi.Size()
+			}
+			break
+		}
 		return fmt.Errorf("unknown compression method: %s", method)
 	}
 	// print sizes and compression ratio (MB)
@@ -184,6 +195,39 @@ func decompressFile(archive, outDir string, method string) error {
 	var compressedSize int64
 	if fi, err := f.Stat(); err == nil {
 		compressedSize = fi.Size()
+	}
+
+	// handle goz custom format directly
+	if strings.ToLower(method) == "goz" {
+		// determine output filename
+		name := filepath.Base(archive)
+		if ext := filepath.Ext(name); ext == ".goz" {
+			name = name[:len(name)-len(ext)]
+		}
+		if err := os.MkdirAll(outDir, 0o755); err != nil {
+			return err
+		}
+		outPath := filepath.Join(outDir, name)
+		outFile, err := os.Create(outPath)
+		if err != nil {
+			return err
+		}
+		defer outFile.Close()
+		if err := gozalgo.Decompress(f, outFile); err != nil {
+			return err
+		}
+		// get uncompressed size
+		var uncompressedSize int64
+		if fi, err := outFile.Stat(); err == nil {
+			uncompressedSize = fi.Size()
+		}
+		fmt.Printf("Compressed:   %.2f MB\n", float64(compressedSize)/(1024*1024))
+		fmt.Printf("Uncompressed: %.2f MB\n", float64(uncompressedSize)/(1024*1024))
+		if uncompressedSize > 0 {
+			saved := 100 * (1.0 - float64(compressedSize)/float64(uncompressedSize))
+			fmt.Printf("Reduction:    %.2f%%\n", saved)
+		}
+		return nil
 	}
 
 	var reader io.ReadCloser
