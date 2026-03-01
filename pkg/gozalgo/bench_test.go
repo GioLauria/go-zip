@@ -31,8 +31,10 @@ func BenchmarkCompress_Varied(b *testing.B) {
 					b.ReportAllocs()
 					for i := 0; i < b.N; i++ {
 						r := bytes.NewReader(data)
+						// set parallelism for this run
+						DefaultParallel = p
 						// discard output to avoid memory growth
-						if err := Compress(r, io.Discard, bs, p); err != nil {
+						if err := Compress(r, io.Discard, bs); err != nil {
 							b.Fatalf("compress failed: %v", err)
 						}
 					}

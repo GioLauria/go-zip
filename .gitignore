@@ -22,6 +22,7 @@ vendor/
 .idea/
 *.swp
 .DS_Store
+.editorconfig
 # OS
 .DS_Store
 Thumbs.db

@@ -28,14 +28,23 @@ Extension enforcement
 - The CLI enforces `.goz` as the package extension. `-out` will be normalized to end with `.goz`.
 - Decompression rejects files that do not have the `.goz` extension.
 
-Adding zstd backend (suggested)
+Extensibility
 
-To add zstd as an optional backend:
+- The project currently supports a single, custom container format (`.goz`) implemented by the `pkg/gozalgo` package.
+- If you want to add an alternative compression backend in the future, follow these guidelines:
+	1. Implement a small adapter that satisfies a compressor interface such as:
 
-1. Add dependency: `github.com/klauspost/compress/zstd`.
-2. Add a `-method` flag (e.g., `gzip` or `zstd`).
-3. Implement codecs behind an interface `type Compressor interface { Compress(io.Reader, io.Writer) error; Decompress(io.Reader, io.Writer) error }`.
-4. Make sure `.goz` remains the package extension (non-negotiable).
+		 ```go
+		 type Compressor interface {
+				 Compress(io.Reader, io.Writer, int, int) error // (r, w, blockSize, parallel)
+				 Decompress(io.Reader, io.Writer) error
+		 }
+		 ```
+
+	2. Register or call that adapter from `cmd/goz` where appropriate.
+	3. Keep `.goz` as the on-disk package extension; implement any new container metadata in a backwards-compatible way.
+
+Note: the current CLI and documentation assume `goz` is the sole supported method.
 
 Testing and CI
 

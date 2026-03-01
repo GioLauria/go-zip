@@ -6,6 +6,8 @@ import (
 	"errors"
 	"hash/crc32"
 	"io"
+	"runtime"
+	"sync"
 
 	"github.com/andybalholm/brotli"
 	"github.com/golang/snappy"
@@ -30,98 +32,175 @@ const (
 	AlgoSnappy = 3
 )
 
+// DefaultParallel controls the number of workers used by Compress when
+// the caller does not set a parallelism value explicitly. Tests and callers
+// may set this before invoking Compress to benchmark different settings.
+var DefaultParallel int
+
 // Compress reads from r and writes a GOZ archive to w.
 // blockSize controls the size of chunks to try (e.g., 64*1024).
 func Compress(r io.Reader, w io.Writer, blockSize int) error {
 	if blockSize <= 0 {
 		blockSize = 64 * 1024
 	}
-	if _, err := w.Write([]byte(Magic)); err != nil {
-		return err
-	}
-	// write version byte
-	if _, err := w.Write([]byte{Version}); err != nil {
-		return err
+	parallel := DefaultParallel
+	if parallel <= 0 {
+		parallel = runtime.NumCPU()
 	}
 
-	zstdEnc, err := zstd.NewWriter(nil)
-	if err != nil {
-		return err
+	type job struct {
+		idx  int
+		data []byte
 	}
-	defer zstdEnc.Close()
+	type res struct {
+		idx  int
+		algo byte
+		data []byte
+		crc  uint32
+		ulen uint32
+		err  error
+	}
 
-	buf := make([]byte, blockSize)
+	jobs := make(chan job, parallel*2)
+	results := make(chan res, parallel*2)
+
+	// workers
+	var wg sync.WaitGroup
+	wg.Add(parallel)
+	for wkr := 0; wkr < parallel; wkr++ {
+		go func() {
+			defer wg.Done()
+			zstdEnc, _ := zstd.NewWriter(nil)
+			if zstdEnc != nil {
+				defer zstdEnc.Close()
+			}
+			for j := range jobs {
+				block := j.data
+				var bestAlgo byte = AlgoSnappy
+				var bestData []byte
+				// zstd
+				if zstdEnc != nil {
+					zbuf := zstdEnc.EncodeAll(block, nil)
+					bestAlgo = AlgoZstd
+					bestData = append([]byte(nil), zbuf...)
+				}
+				// lz4
+				lb := bytes.NewBuffer(nil)
+				lw := lz4.NewWriter(lb)
+				if _, err := lw.Write(block); err == nil {
+					lw.Close()
+					if bestData == nil || len(lb.Bytes()) < len(bestData) {
+						bestAlgo = AlgoLz4
+						bestData = lb.Bytes()
+					}
+				}
+				// brotli
+				bb := bytes.NewBuffer(nil)
+				bw := brotli.NewWriterLevel(bb, brotli.BestCompression)
+				if _, err := bw.Write(block); err == nil {
+					bw.Close()
+					if bestData == nil || len(bb.Bytes()) < len(bestData) {
+						bestAlgo = AlgoBrotli
+						bestData = bb.Bytes()
+					}
+				}
+				// snappy
+				sb := snappy.Encode(nil, block)
+				if bestData == nil || len(sb) < len(bestData) {
+					bestAlgo = AlgoSnappy
+					bestData = sb
+				}
+				crc := crc32.ChecksumIEEE(block)
+				results <- res{idx: j.idx, algo: bestAlgo, data: bestData, crc: crc, ulen: uint32(len(block)), err: nil}
+			}
+		}()
+	}
+
+	// start a writer goroutine that writes blocks in order as results arrive
+	writeErrC := make(chan error, 1)
+	go func() {
+		// write header
+		if _, err := w.Write([]byte(Magic)); err != nil {
+			writeErrC <- err
+			return
+		}
+		if _, err := w.Write([]byte{Version}); err != nil {
+			writeErrC <- err
+			return
+		}
+
+		pending := make(map[int]res)
+		next := 0
+		for {
+			r, ok := <-results
+			if !ok {
+				break
+			}
+			if r.err != nil {
+				writeErrC <- r.err
+				return
+			}
+			pending[r.idx] = r
+			for {
+				rr, has := pending[next]
+				if !has {
+					break
+				}
+				// write block rr
+				if _, err := w.Write([]byte{rr.algo}); err != nil {
+					writeErrC <- err
+					return
+				}
+				if err := binary.Write(w, binary.BigEndian, uint32(len(rr.data))); err != nil {
+					writeErrC <- err
+					return
+				}
+				if err := binary.Write(w, binary.BigEndian, rr.ulen); err != nil {
+					writeErrC <- err
+					return
+				}
+				if err := binary.Write(w, binary.BigEndian, rr.crc); err != nil {
+					writeErrC <- err
+					return
+				}
+				if _, err := w.Write(rr.data); err != nil {
+					writeErrC <- err
+					return
+				}
+				delete(pending, next)
+				next++
+			}
+		}
+		writeErrC <- nil
+	}()
+
+	// feed jobs
+	idx := 0
 	for {
+		buf := make([]byte, blockSize)
 		n, err := io.ReadFull(r, buf)
 		if err != nil && err != io.EOF && err != io.ErrUnexpectedEOF {
+			close(jobs)
+			wg.Wait()
+			close(results)
+			<-writeErrC
 			return err
 		}
 		if n == 0 {
 			break
 		}
-		block := buf[:n]
-
-		// candidate compression outputs
-		var bestAlgo byte = AlgoSnappy
-		var bestData []byte
-
-		// zstd (EncodeAll is fast and alloc-friendly)
-		zbuf := zstdEnc.EncodeAll(block, nil)
-		bestAlgo = AlgoZstd
-		bestData = append([]byte(nil), zbuf...)
-
-		// lz4
-		lb := bytes.NewBuffer(nil)
-		lw := lz4.NewWriter(lb)
-		if _, err := lw.Write(block); err == nil {
-			lw.Close()
-			if len(lb.Bytes()) < len(bestData) {
-				bestAlgo = AlgoLz4
-				bestData = lb.Bytes()
-			}
-		}
-
-		// brotli
-		bb := bytes.NewBuffer(nil)
-		bw := brotli.NewWriterLevel(bb, brotli.BestCompression)
-		if _, err := bw.Write(block); err == nil {
-			bw.Close()
-			if len(bb.Bytes()) < len(bestData) {
-				bestAlgo = AlgoBrotli
-				bestData = bb.Bytes()
-			}
-		}
-
-		// snappy
-		sb := snappy.Encode(nil, block)
-		if len(sb) < len(bestData) {
-			bestAlgo = AlgoSnappy
-			bestData = sb
-		}
-
-		// compute CRC32 of uncompressed block
-		crc := crc32.ChecksumIEEE(block)
-
-		// write header: algo (1), clen (4), ulen (4), crc32 (4)
-		if _, err := w.Write([]byte{bestAlgo}); err != nil {
-			return err
-		}
-		if err := binary.Write(w, binary.BigEndian, uint32(len(bestData))); err != nil {
-			return err
-		}
-		if err := binary.Write(w, binary.BigEndian, uint32(len(block))); err != nil {
-			return err
-		}
-		if err := binary.Write(w, binary.BigEndian, crc); err != nil {
-			return err
-		}
-		if _, err := w.Write(bestData); err != nil {
-			return err
-		}
-
+		block := append([]byte(nil), buf[:n]...)
+		jobs <- job{idx: idx, data: block}
+		idx++
 		if err == io.EOF || err == io.ErrUnexpectedEOF {
 			break
 		}
+	}
+	close(jobs)
+	wg.Wait()
+	close(results)
+	if err := <-writeErrC; err != nil {
+		return err
 	}
 	return nil
 }

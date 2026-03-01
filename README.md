@@ -49,13 +49,18 @@ Flags
 - `-C` : compress a single file (compress mode)
 - `-D` : decompress archive into directory (decompress mode)
 - `-out` : explicitly set output file (compress) or output directory (decompress)
-- `-level` : gzip compression level (1-9)
- - `-method` : compression method (`gzip` or `zstd`). Use `zstd` for stronger compression.
+- `-block-size` : block size in bytes for the `goz` algorithm (default: `65536`)
+- `-parallel` : number of parallel workers for the `goz` algorithm (default: `runtime.NumCPU()`)
+
+Recommended defaults
+
+- Default `-block-size=65536` (64 KiB) is a reasonable balance between latency and throughput.
+- For higher throughput on multi-core machines, try `-block-size=262144` (256 KiB) and `-parallel` equal to your CPU core count; benchmarks in `pkg/gozalgo/bench_test.go` show this combination typically gives the best MB/s on modern CPUs.
 
 Notes
 
 - The CLI enforces the `.goz` extension for outputs and requires `.goz` for input archives when decompressing.
-- Current backend: gzip. For higher compression, a zstd backend can be added.
+- The `goz` tool uses the `pkg/gozalgo` implementation which performs per-block "best-of" compression: each block is compressed with multiple algorithms (zstd, lz4, brotli, snappy) and the smallest compressed result is stored. This favors compressed size; tune `-block-size`/`-parallel` for throughput as needed.
 
 Project layout
 
@@ -72,9 +77,15 @@ License
 
 MIT — see `LICENSE`.
 
+
 Acknowledgements
 
-Go Zip uses `zstd` for the stronger compression backend (optional via `-method zstd`). The project uses the implementation from `github.com/klauspost/compress/zstd` — many thanks to @klauspost for that excellent work.
+- Compression libraries used internally by `pkg/gozalgo`:
+	- `github.com/klauspost/compress` (zstd)
+	- `github.com/pierrec/lz4/v4` (lz4)
+	- `github.com/andybalholm/brotli` (brotli)
+	- `github.com/golang/snappy` (snappy)
+
 
 Contributing
 

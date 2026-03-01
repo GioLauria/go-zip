@@ -36,9 +36,8 @@ Flags
 - `-C` : compress mode
 - `-D` : decompress mode
 - `-out` : explicitly set output file (for compress) or output directory (for decompress)
-- `-level` : gzip compression level (1-9), higher is slower and smaller
- - `-level` : gzip compression level (1-9), higher is slower and smaller
- - `-method` : compression method to use (`gzip` or `zstd`). `zstd` offers stronger compression; default is `gzip`.
+- `-block-size` : block size in bytes for the `goz` algorithm (default: `65536`)
+- `-parallel` : number of parallel workers for the `goz` algorithm (default: `runtime.NumCPU()`)
 
 When using `-out` for compression the CLI will normalize the filename to end with `.goz`.
 
@@ -54,5 +53,7 @@ Decompress a `.goz` archive into a directory. The archive must have a `.goz` ext
 
 Notes
 
-- The CLI stores the original filename in the gzip header; decompression restores that name inside the specified output directory.
+- The `goz` tool stores compressed data in the project's custom GOZ container format. The archive preserves the original filename semantics; when you decompress a `.goz` archive the original base name is restored inside the specified output directory.
 - The `.goz` extension is mandatory and enforced by the CLI.
+
+See `docs/goz-format.md` for details on the GOZ container format.
