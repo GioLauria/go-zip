@@ -1,0 +1,106 @@
+name: Release
+
+permissions:
+  contents: write
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build binaries
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.23'
+
+      - name: Build
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            GOOS=windows; OUT=go-zip.exe
+          else
+            GOOS=linux; OUT=go-zip
+          fi
+          env GOOS=$GOOS go build -ldflags "-s -w" -o artifacts/${OUT} ./cmd/goz
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries-${{ matrix.os }}
+          path: artifacts/*
+
+  release:
+    name: Create release and changelog
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Get tag and previous tag
+        id: tags
+        run: |
+          echo "TAG=${GITHUB_REF_NAME}" >> $GITHUB_ENV
+          PREV_TAG=$(git tag --sort=-creatordate | grep -E '^v' | sed -n '2p' || true)
+          echo "PREV_TAG=${PREV_TAG}" >> $GITHUB_ENV
+          echo "Found previous tag: ${PREV_TAG}"
+
+      - name: Generate release notes
+        run: |
+          TAG=${GITHUB_REF_NAME}
+          PREV=${PREV_TAG}
+          if [ -z "$PREV" ]; then
+            RANGE=""
+          else
+            RANGE="$PREV..$TAG"
+          fi
+          echo "Range: $RANGE"
+          DATE=$(date +%Y-%m-%d)
+          echo "## [$TAG] - $DATE" > RELEASE_NOTES.md
+          echo >> RELEASE_NOTES.md
+          if [ -z "$RANGE" ]; then
+            git log --pretty=format:"- %s (%an)" --no-merges >> RELEASE_NOTES.md || true
+          else
+            git log "$RANGE" --pretty=format:"- %s (%an)" --no-merges >> RELEASE_NOTES.md || true
+          fi
+          echo >> RELEASE_NOTES.md
+          cat RELEASE_NOTES.md
+
+      - name: Prepend release notes to CHANGELOG.md and push
+        env:
+          TAG: ${{ env.TAG }}
+        run: |
+          # create updated changelog with Unreleased preserved
+          awk 'NR==1{print;getline;print;exit}' CHANGELOG.md > HEADER.tmp || true
+          (cat RELEASE_NOTES.md; echo; tail -n +1 CHANGELOG.md) > CHANGELOG.new || true
+          mv CHANGELOG.new CHANGELOG.md || true
+          git add CHANGELOG.md || true
+          git commit -m "chore(release): update CHANGELOG for ${GITHUB_REF_NAME}" || echo "No CHANGELOG changes to commit"
+          git push origin HEAD:main || echo "Push of CHANGELOG back to main failed or not permitted"
+
+      - name: Create GitHub release and upload artifacts
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ env.TAG }}
+          name: ${{ env.TAG }}
+          body_path: RELEASE_NOTES.md
+          files: artifacts/*
