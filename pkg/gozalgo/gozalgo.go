@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"hash/crc32"
 	"io"
 
 	"github.com/andybalholm/brotli"
@@ -21,7 +22,8 @@ import (
 // compressed payload
 
 const (
-	Magic      = "GOZ1"
+	Magic      = "GOZ2" // new format with version + CRC per block
+	Version    = 1
 	AlgoZstd   = 0
 	AlgoLz4    = 1
 	AlgoBrotli = 2
@@ -35,6 +37,10 @@ func Compress(r io.Reader, w io.Writer, blockSize int) error {
 		blockSize = 64 * 1024
 	}
 	if _, err := w.Write([]byte(Magic)); err != nil {
+		return err
+	}
+	// write version byte
+	if _, err := w.Write([]byte{Version}); err != nil {
 		return err
 	}
 
@@ -59,13 +65,10 @@ func Compress(r io.Reader, w io.Writer, blockSize int) error {
 		var bestAlgo byte = AlgoSnappy
 		var bestData []byte
 
-		// zstd
-		zb := bytes.NewBuffer(nil)
+		// zstd (EncodeAll is fast and alloc-friendly)
 		zbuf := zstdEnc.EncodeAll(block, nil)
-		zb.Reset()
-		zb.Write(zbuf)
 		bestAlgo = AlgoZstd
-		bestData = zb.Bytes()
+		bestData = append([]byte(nil), zbuf...)
 
 		// lz4
 		lb := bytes.NewBuffer(nil)
@@ -96,7 +99,10 @@ func Compress(r io.Reader, w io.Writer, blockSize int) error {
 			bestData = sb
 		}
 
-		// write header
+		// compute CRC32 of uncompressed block
+		crc := crc32.ChecksumIEEE(block)
+
+		// write header: algo (1), clen (4), ulen (4), crc32 (4)
 		if _, err := w.Write([]byte{bestAlgo}); err != nil {
 			return err
 		}
@@ -104,6 +110,9 @@ func Compress(r io.Reader, w io.Writer, blockSize int) error {
 			return err
 		}
 		if err := binary.Write(w, binary.BigEndian, uint32(len(block))); err != nil {
+			return err
+		}
+		if err := binary.Write(w, binary.BigEndian, crc); err != nil {
 			return err
 		}
 		if _, err := w.Write(bestData); err != nil {
@@ -119,12 +128,21 @@ func Compress(r io.Reader, w io.Writer, blockSize int) error {
 
 // Decompress reads a GOZ archive from r and writes the decompressed data to w.
 func Decompress(r io.Reader, w io.Writer) error {
+	// read magic + version
 	header := make([]byte, 4)
 	if _, err := io.ReadFull(r, header); err != nil {
 		return err
 	}
 	if string(header) != Magic {
 		return errors.New("invalid goz magic")
+	}
+	// read version
+	ver := make([]byte, 1)
+	if _, err := io.ReadFull(r, ver); err != nil {
+		return err
+	}
+	if ver[0] != Version {
+		return errors.New("unsupported goz version")
 	}
 	for {
 		h := make([]byte, 1)
@@ -141,6 +159,10 @@ func Decompress(r io.Reader, w io.Writer) error {
 		}
 		var ulen uint32
 		if err := binary.Read(r, binary.BigEndian, &ulen); err != nil {
+			return err
+		}
+		var crc uint32
+		if err := binary.Read(r, binary.BigEndian, &crc); err != nil {
 			return err
 		}
 		data := make([]byte, clen)
@@ -182,6 +204,10 @@ func Decompress(r io.Reader, w io.Writer) error {
 			out = dec
 		default:
 			return errors.New("unknown algorithm in goz archive")
+		}
+		// verify CRC32 of uncompressed data
+		if crc != crc32.ChecksumIEEE(out) {
+			return errors.New("crc mismatch in goz archive block")
 		}
 		if _, err := w.Write(out); err != nil {
 			return err
