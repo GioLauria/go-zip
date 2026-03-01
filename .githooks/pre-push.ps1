@@ -11,6 +11,13 @@ while ($true) {
     $localRef = $parts[0]
     if ($localRef -like 'refs/tags/*') {
         $tag = $localRef -replace '^refs/tags/', ''
+        # verify tag signature (requires GPG setup and a signed tag)
+        $verify = git tag -v $tag 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "ERROR: tag '$tag' is not GPG-signed or signature verification failed."
+            Write-Error "Create a signed tag with: git tag -s $tag -m 'message'"
+            exit 1
+        }
         $chlog = "CHANGELOG.md"
         if (Test-Path $chlog) {
             $date = (Get-Date).ToString('yyyy-MM-dd')

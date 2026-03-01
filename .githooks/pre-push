@@ -10,6 +10,12 @@ while [ -n "$local_ref" ]; do
   case "$local_ref" in
     refs/tags/*)
       tag=${local_ref#refs/tags/}
+      # verify tag is GPG-signed
+      if ! git tag -v "$tag" >/dev/null 2>&1; then
+        echo "ERROR: tag '$tag' is not GPG-signed or signature verification failed."
+        echo "Create a signed tag with: git tag -s $tag -m \"message\" or enable 'commit.gpgSign' and use 'git tag -s'."
+        exit 1
+      fi
       CHLOG=CHANGELOG.md
       if [ -f "$CHLOG" ]; then
         DATE=$(date +%Y-%m-%d)

@@ -46,6 +46,18 @@ Extensibility
 
 Note: the current CLI and documentation assume `goz` is the sole supported method.
 
+Tag signing
+
+- Releases (git tags) are expected to be GPG-signed. The local `pre-push` hook rejects pushing unsigned tags.
+- Create an annotated signed tag locally with:
+
+```bash
+git tag -s vX.Y.Z -m "chore(release): vX.Y.Z"
+git push origin vX.Y.Z
+```
+
+Ensure you have GPG configured for Git (see `git help gpg` / `git config user.signingkey`).
+
 Testing and CI
 
 - Unit tests: `go test ./...`
